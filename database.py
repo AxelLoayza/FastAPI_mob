@@ -56,7 +56,6 @@ engine = create_engine(
     pool_recycle=3600,
     connect_args={
         "connect_timeout": 10,
-        "timeout": 15,
         "application_name": "barbershop_api"
     },
     echo=False,
