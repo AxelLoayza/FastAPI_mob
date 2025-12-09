@@ -78,7 +78,18 @@ def crear_cita_endpoint(usuario_id: int, cita: CitaCreate, db: Session = Depends
     usuario = get_usuario_by_id(db, usuario_id)
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return create_cita(db, usuario_id, cita)
+    
+    nueva_cita, cita_conflicto = create_cita(db, usuario_id, cita)
+    if nueva_cita is None:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "error": "CITA_CONFLICTO",
+                "mensaje": "Ya existe una cita en ese horario",
+                "cita_existente": cita_conflicto
+            }
+        )
+    return nueva_cita
 
 @app.get("/citas/", response_model=list[CitaRead])
 def listar_citas(db: Session = Depends(get_db)):

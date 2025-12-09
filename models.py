@@ -30,6 +30,8 @@ class Cita(Base):
     fecha = Column(Date, nullable=False)
     hora = Column(Time, nullable=False)
     estado = Column(String(20), default="pendiente")
+    servicio = Column(String(100), nullable=True)  # Nuevo campo
+    duracion_minutos = Column(Integer, default=30)  # Nuevo campo con default 30 min
 
     usuario = relationship("Usuario")
     barbero = relationship("Barbero")

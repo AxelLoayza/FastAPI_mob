@@ -28,6 +28,10 @@ class CitaCreate(BaseModel):
     fecha: date
     hora: time
     estado: str = "pendiente"
+    servicio: Optional[str] = None  # Nuevo campo
+    duracion_minutos: int = 30  # Nuevo campo con default 30 min
+    servicio: Optional[str] = None  # Nuevo campo
+    duracion_minutos: int = 30  # Nuevo campo con default 30 min
 
 class CitaRead(BaseModel):
     id_cita: int
@@ -36,6 +40,8 @@ class CitaRead(BaseModel):
     fecha: date
     hora: time
     estado: str
+    servicio: Optional[str] = None  # Nuevo campo
+    duracion_minutos: int = 30  # Nuevo campo
     
     class Config:
         from_attributes = True
@@ -45,6 +51,8 @@ class CitaUpdate(BaseModel):
     fecha: date = None
     hora: time = None
     estado: str = None
+    servicio: Optional[str] = None  # Nuevo campo
+    duracion_minutos: Optional[int] = None  # Nuevo campo
 
 # Esquema para Perfil con Historial
 class PerfilUsuario(BaseModel):

@@ -1,4 +1,6 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_
+from datetime import datetime, timedelta
 from models import Cliente, Barbero, Cita, Usuario
 from schemas import CitaCreate, CitaUpdate, UsuarioCreate, UsuarioLogin
 from passlib.context import CryptContext
@@ -39,18 +41,64 @@ def authenticate_usuario(db: Session, email: str, contraseña: str):
     return usuario
 
 # CRUD Citas
+def verificar_disponibilidad_barbero(db: Session, id_barbero: int, fecha, hora, duracion_minutos: int) -> tuple[bool, dict]:
+    """
+    Verifica si el barbero está disponible considerando la duración real de la cita.
+    Retorna (disponible: bool, info_conflicto: dict)
+    """
+    # Calcular hora de inicio y fin de la nueva cita
+    hora_inicio_dt = datetime.combine(fecha, hora)
+    hora_fin_dt = hora_inicio_dt + timedelta(minutes=duracion_minutos)
+    
+    # Buscar todas las citas del barbero en la misma fecha (excepto canceladas)
+    citas_existentes = db.query(Cita).filter(
+        and_(
+            Cita.id_barbero == id_barbero,
+            Cita.fecha == fecha,
+            Cita.estado != "cancelada"
+        )
+    ).all()
+    
+    # Verificar solapamiento con cada cita existente
+    for cita_existente in citas_existentes:
+        cita_inicio_dt = datetime.combine(fecha, cita_existente.hora)
+        cita_fin_dt = cita_inicio_dt + timedelta(minutes=cita_existente.duracion_minutos)
+        
+        # Hay solapamiento si:
+        # - La nueva cita empieza antes de que termine la existente Y
+        # - La nueva cita termina después de que empiece la existente
+        if hora_inicio_dt < cita_fin_dt and hora_fin_dt > cita_inicio_dt:
+            return False, {
+                "id": cita_existente.id_cita,
+                "hora_inicio": cita_existente.hora.strftime("%H:%M:%S"),
+                "hora_fin": cita_fin_dt.time().strftime("%H:%M:%S"),
+                "servicio": cita_existente.servicio or "No especificado"
+            }
+    
+    return True, {}
+
 def create_cita(db: Session, usuario_id: int, cita: CitaCreate):
+    # Validar disponibilidad del barbero con duración real
+    disponible, cita_conflicto = verificar_disponibilidad_barbero(
+        db, cita.id_barbero, cita.fecha, cita.hora, cita.duracion_minutos
+    )
+    
+    if not disponible:
+        return None, cita_conflicto  # Retorna None y datos del conflicto
+    
     db_cita = Cita(
         id_usuario=usuario_id,
         id_barbero=cita.id_barbero,
         fecha=cita.fecha,
         hora=cita.hora,
-        estado=cita.estado
+        estado=cita.estado,
+        servicio=cita.servicio,
+        duracion_minutos=cita.duracion_minutos
     )
     db.add(db_cita)
     db.commit()
     db.refresh(db_cita)
-    return db_cita
+    return db_cita, {}
 
 def get_citas(db: Session):
     return db.query(Cita).all()
