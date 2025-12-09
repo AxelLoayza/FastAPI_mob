@@ -50,10 +50,15 @@ DIRECT_URL_CLEAN = clean_database_url(DIRECT_URL) if DIRECT_URL else DATABASE_UR
 engine = create_engine(
     DATABASE_URL_CLEAN,
     poolclass=pool.QueuePool,
-    pool_size=10,
-    max_overflow=20,
+    pool_size=15,
+    max_overflow=25,
     pool_pre_ping=True,
     pool_recycle=3600,
+    connect_args={
+        "connect_timeout": 10,
+        "timeout": 15,
+        "application_name": "barbershop_api"
+    },
     echo=False,
 )
 

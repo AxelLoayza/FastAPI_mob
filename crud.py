@@ -3,7 +3,12 @@ from models import Cliente, Barbero, Cita, Usuario
 from schemas import CitaCreate, CitaUpdate, UsuarioCreate, UsuarioLogin
 from passlib.context import CryptContext
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Optimizar bcrypt con rounds reducidos para performance en producción
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=10  # Default es 12, reducir a 10 acelera el hash
+)
 
 # CRUD Usuarios
 def create_usuario(db: Session, usuario: UsuarioCreate):
